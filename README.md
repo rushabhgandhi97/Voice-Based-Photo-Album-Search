@@ -7,7 +7,7 @@ This application uses Lex, ElasticSearch, and Rekognition to create an intellige
 
 ## Architecture
 
-![diagram](Images/ArchitectureDiagram-Voice_Based.png .png)
+![diagram](Images/ArchitectureDiagram-Voice_Based.png)
 
 ## Steps:
 There are 5 components:
