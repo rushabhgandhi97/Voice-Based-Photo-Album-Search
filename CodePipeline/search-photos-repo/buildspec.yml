@@ -1,9 +1,11 @@
-version: 0.2  
-phases:  
+version: 0.2
+phases:
   install:
+    runtime-versions:
+        python: 3.8
+  build:
     commands:
-      - aws cloudformation package --template-file search-photos.yaml --s3-bucket frontendbuckett2 --output-template-file search-photos.yaml
-artifacts:  
-  type: zip
+      - sam package --template-file search-photos.yaml --s3-bucket frontendbuckettt2 --output-template-file search-photos.yaml
+artifacts:
   files:
     - search-photos.yaml
