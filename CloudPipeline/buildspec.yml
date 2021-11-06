@@ -11,4 +11,5 @@ phases:
       - pipenv run sam package --template-file template.yml --s3-bucket aws-audio-analysis11 --output-template-file packaged-template.yml
 artifacts:
   files:
+    - template.yml
     - packaged-template.yml
