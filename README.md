@@ -116,4 +116,4 @@ There are 5 components:
 	  4. Upload new photos (with or without custom labels) and see them appear in the search results.
 		
 
-### mail @ sidharth.purohit@nyu.edu/[rushabh.gandhi@nyu.edu](url) for more information!
+### mail @ sidharth.purohit@nyu.edu / [rushabh.gandhi@nyu.edu](url) for more information!
