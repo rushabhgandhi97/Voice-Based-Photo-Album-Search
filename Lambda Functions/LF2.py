@@ -1,100 +1,80 @@
 import json
-import os
-import math
-import dateutil.parser
-import datetime
-import time
-import logging
 import boto3
-from botocore.vendored import requests
+import requests
+from requests_aws4auth import AWS4Auth
 
-#logger = logging.getLogger()
-#logger.setLevel(logging.DEBUG)
+region = 'us-east-1' 
+service = 'es'
+credentials = boto3.Session().get_credentials()
+awsauth = AWS4Auth(credentials.access_key, credentials.secret_key, region, service, session_token=credentials.token)
 
-def get_slots(intent_request):
-    return intent_request['currentIntent']['slots']
+def clearIndices():
+    host = 'https://search-photosearch-jv6lpm2yc67iulmuqlsn6c7b34.us-east-1.es.amazonaws.com/photosearch/'
+    res = requests.delete(host,auth=awsauth)
+    res = json.loads(res.content.decode('utf-8'))
+    return res   
 
-def close(session_attributes, fulfillment_state, message):
-    response = {
-        'sessionAttributes': session_attributes,
-        'dialogAction': {
-            'type': 'Close',
-            'fulfillmentState': fulfillment_state,
-            'message': message
-        }
-    }
-    
+def searchIndices():
+    host = 'https://search-photosearch-jv6lpm2yc67iulmuqlsn6c7b34.us-east-1.es.amazonaws.com/photosearch/_search?q='
+    res = requests.get(host,auth=awsauth)
+    res = json.loads(res.content.decode('utf-8'))
+    return res
+
+def searchElasticIndex(search):
+    print("inside searchElasticIndex function")
+    photos = []
+    print(search)
+    for s in search:
+        print(s)
+        host = 'https://search-photosearch-jv6lpm2yc67iulmuqlsn6c7b34.us-east-1.es.amazonaws.com/photosearch/_search?q='+s
+        print(host)
+        res = requests.get(host,auth=awsauth)
+        print(res)
+        res = json.loads(res.content.decode('utf-8'))
+        print(res)
+        for item in res["hits"]["hits"]:
+            bucket = item["_source"]["bucket"]
+            key = item["_source"]["objectKey"]
+            photoURL = "https://{0}.s3.amazonaws.com/{1}".format(bucket,key)
+            photos.append(photoURL)
+    return photos
+
+def prepareForSearch(res):
+    print("inside prepareForSearch function")
+    photos = []
+    if res["slots"]["Word_A"] != None:
+        photos.append(res["slots"]["Word_A"])
+    if res["slots"]["Word_B"] != None:
+        photos.append(res["slots"]["Word_B"])
+    return photos
+
+def sendToLex(message):
+    print("inside sendToLex function")
+    lex = boto3.client('lex-runtime')
+    response = lex.post_text(
+        botName='HandleQueriesBot',
+        botAlias='photos',
+        userId='lf1',
+        inputText=message)
+    print(response)        
     return response
-
     
 def lambda_handler(event, context):
     # TODO implement
-    os.environ['TZ'] = 'America/New_York'
-    time.tzset()
-    client = boto3.client('lex-runtime')
-    #logger.debug("In lambda")
-    response_lex = client.post_text(
-    botName='photoboy',
-    botAlias="bot_bot",
-    userId="test",
-    inputText= event["queryStringParameters"]['q'])
-    print(response_lex)
-    if 'slots' in response_lex:
-        keys = [response_lex['slots']['keyone'],response_lex['slots']['keytwo'],response_lex['slots']['keythree']]
-        print keys
-        pictures = search_intent(keys) #get images keys from elastic search labels
-        response = {
-            "statusCode": 200,
-            "headers": {"Access-Control-Allow-Origin":"*","Content-Type":"application/json"},
-            "body": json.dumps(pictures),
-            "isBase64Encoded": False
-        }
-    else:
-        response = {
-            "statusCode": 200,
-            "headers": {"Access-Control-Allow-Origin":"*","Content-Type":"application/json"},
-            "body": [],
-            "isBase64Encoded": False}
-    #logger.debug('event.bot.name={}'.format(event['bot']['name']))
-    return response
-    
-def dispatch(intent_request):
-    #logger.debug('dispatch userId={}, intentName={}'.format(intent_request['userId'], intent_request['currentIntent']['name']))
-    intent_name = intent_request['currentIntent']['name']
-    return search_intent(intent_request)
-
-    raise Exception('Intent with name ' + intent_name + ' not supported')
-
-def search_intent(labels):
-
-    # key1 = get_slots(intent_request)['keyone']
-    # key2 = get_slots(intent_request)['keytwo']
-    # key3 = get_slots(intent_request)['keythree']
-    url = 'https://vpc-photos-b4al4b3cnk5jcfbvlrgxxu3vhu.us-east-1.es.amazonaws.com/photos/_search?q='
-    #labels = [key1,key2,key3]
-    resp = []
-    for label in labels:
-        if (label is not None) and label != '':
-            url2 = url+label
-            resp.append(requests.get(url2).json())
-    print (resp)
-  
-    output = []
-    for r in resp:
-        if 'hits' in r:
-             for val in r['hits']['hits']:
-                key = val['_source']['objectKey']
-                if key not in output:
-                    output.append(key)
-    #url = "https://vpc-photos-b4al4b3cnk5jcfbvlrgxxu3vhu.us-east-1.es.amazonaws.com/photos/_search?pretty=true&q=*:*"
-    #print(url)
-    #resp = requests.get(url,headers={"Content-Type": "application/json"}).json()
-    #resp = requests.get(url)
-    print(output)
-
-    return output
-    # return close(intent_request['sessionAttributes'],
-    #          'Fulfilled',
-    #          {'contentType': 'PlainText',
-    #           'content': ''.join(output)})
+    photos = []
+    #res = clearIndices() used to clear indexes in ES
+    #res = searchIndices() #used to check index
+    print("adadasgswdgdfgdf")
+    print(event)
+    message = event["queryStringParameters"]["q"]
+    print(message)
+    resFromLex = sendToLex(message)
+    search = prepareForSearch(resFromLex)
+    print(photos)
+    photos = searchElasticIndex(search)
+    return {
+        'statusCode': 200,
+        'headers': {"Access-Control-Allow-Origin":"*","Access-Control-Allow-Methods":"*","Access-Control-Allow-Headers": "*"},
+        'body': json.dumps(photos)
+    }
 
