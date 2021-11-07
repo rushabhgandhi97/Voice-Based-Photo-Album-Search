@@ -2,43 +2,62 @@ import json
 import boto3
 from botocore.vendored import requests
 import time
+from requests_aws4auth import AWS4Auth
 
+
+region = 'us-east-1' 
+service = 'es'
+credentials = boto3.Session().get_credentials()
+awsauth = AWS4Auth(credentials.access_key, credentials.secret_key, region, service, session_token=credentials.token)
+s3 = boto3.client('s3')
 
 def lambda_handler(event, context):
-    # TODO implement
-    #print(json.dumps(event, indent=4, sort_keys=True))
-    #bucket_name = 'photoboy'
-    #key_name = 'download.jpg'
+
     s3_info = event['Records'][0]['s3']
     bucket_name = s3_info['bucket']['name']
     key_name = s3_info['object']['key']
-    #print(bucket_name)
-    client = boto3.client('rekognition')
+    
+    response = s3.head_object(Bucket=bucket_name, Key=key_name)
+    
+    #print("head_object : " , response)
+    if response["Metadata"]:
+        customlabels = response["Metadata"]["customlabels"]
+        print("customlabels : ", customlabels)
+        customlabels = customlabels.split(',')
+        customlabels = list(map(lambda x: x.lower(), customlabels))
+    
+    client = boto3.client('rekognition','us-east-1')
     pass_object = {'S3Object':{'Bucket':bucket_name,'Name':key_name}}
     resp = client.detect_labels(Image=pass_object)
-    #print('<---------Now response object---------->')
-    #print(json.dumps(resp, indent=4, sort_keys=True))
+    label_names = list(map(lambda x:x['Name'],resp['Labels']))
+
+    
+    print(label_names)
+    
     timestamp =time.time()
-    #timestamp = event['Records'][0]['eventTime']
-    #timestamp = timestamp[:-5]
+
     labels = []
-    #temp = resp['Labels'][0]['Name']
+
     for i in range(len(resp['Labels'])):
         labels.append(resp['Labels'][i]['Name'])
-    print('<------------Now label list----------------->')
+    if response["Metadata"]:
+        for cl in customlabels:
+            print(cl)
+            cl = cl.lower().strip()
+            if cl not in label_names:
+                labels.append(cl)
     print(labels)
-    #print('<------------Now required json-------------->')
+    
     format = {'objectKey':key_name,'bucket':bucket_name,'createdTimestamp':timestamp,'labels':labels}
-    #required_json = json.dumps(format)
-    #print(required_json)
-    url = "https://vpc-photos-b4al4b3cnk5jcfbvlrgxxu3vhu.us-east-1.es.amazonaws.com/photos/0"
+    
+    url = "https://search-photosearch-jv6lpm2yc67iulmuqlsn6c7b34.us-east-1.es.amazonaws.com/photosearch/1"
+    
     headers = {"Content-Type": "application/json"}
-    #url2 = "https://vpc-photos-b4al4b3cnk5jcfbvlrgxxu3vhu.us-east-1.es.amazonaws.com/photos/_search?pretty=true&q=*:*"
-    r = requests.post(url, data=json.dumps(format).encode("utf-8"), headers=headers)
-    #resp_elastic = requests.get(url2,headers={"Content-Type": "application/json"}).json()
-    #print('<------------------GET-------------------->')
+    
+    r = requests.post(url,auth=awsauth, data=json.dumps(format).encode("utf-8"), headers=headers)
+    
     print(r.text)
-    #print(json.dumps(resp_elastic, indent=4, sort_keys=True))
+    
     return {
         'statusCode': 200,
         'body': json.dumps('Hello from Lambda!')
