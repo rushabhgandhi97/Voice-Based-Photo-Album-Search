@@ -22,7 +22,7 @@ function searchPhoto() {
       length_of_response = resp_data.length;
       if (length_of_response == 0) {
         document.getElementById('displaytext').innerHTML =
-          'No Images Found !!!';
+          'Sorry could not find the image. Try again!' ;
         document.getElementById('displaytext').style.display = 'block';
       }
 
@@ -73,15 +73,17 @@ function uploadPhoto() {
       key: file.name,
       bucket: 'mybuckettt2',
       'Content-Type': file.type,
-      'x-amz-meta-customLabels': 'TEMP',
+      'x-amz-meta-customLabels': note_customtag.value,
+      'Accept': 'image/*'
     };
+    console.log(note_customtag.value)
     var additionalParams = {};
     apigClient
       .uploadBucketKeyPut(params, body, additionalParams)
       .then(function (res) {
         if (res.status == 200) {
           document.getElementById('uploadText').innerHTML =
-            'Image Uploaded  !!!';
+            ':) Your image is uploaded successfully!';
           document.getElementById('uploadText').style.display = 'block';
         }
       });

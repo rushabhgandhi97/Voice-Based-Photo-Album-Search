@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 
 <head>
-    <title>Smart Photo Album</title>
+    <title>Cloud Computing Assignment-2 : Smart Photo Album 2021 </title>
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
@@ -24,20 +24,24 @@
     <div class="container">
         <div class="app">
             <div class="heading">
-                <h1>Smart Photo Album</h1>
+                <h1>Cloud Computing Assignment-2 Smart Photo Album Fall-2021</h1>
             </div>
             <div>
-                <h3 style="margin-top:30px;text-align:center">Search a photo</h3>
+                <h3 style="margin-top:30px;text-align:center">Search your photo</h3>
             </div>
             <div class="input-group">
-                <input id="note-textarea" type="text" class="form-control" placeholder="Search for a photo" name="search">
+                <input id="note-textarea" type="text" class="form-control" placeholder="Search your photo" name="search">
                 <div class="input-group-btn">
                     <button class="btn btn-default" type="submit" onclick="searchPhoto()">  <i class="fa fa-search"></i>
                     </button>
                 </div>
             </div>
-            <h3 style="margin-top:30px;text-align:center">OR</h3>
-            <h3 style="text-align:center">Upload a new photo</h3>
+            <br>
+            <br>
+            <button id="start-record-btn" title="Start Recording">Talk</button>
+            <br>
+            <br><br><br><br>
+            <h3 style="text-align:center">Upload your new photo</h3>
             <div class="input-group" style="margin-top:30px;">
                 <input type="file" class="form-control upload" name="search" id="file_path">
                 <div class="input-group-btn">
@@ -45,7 +49,9 @@
                 </div>
             </div>
         </div>
-        <div></div>
+        <div>
+                <input id="note_customtag" type="text" class="form-control" placeholder="Input Custom tag!" >
+        </div>
         <p id="uploadText"></p>
         <div>
             <div class="banner-section" id="img-container">
@@ -55,6 +61,7 @@
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script src="render.js"></script>
+    <script src="script.js"></script>
     <script src="apigClient.js"></script>
 </body>
 
